@@ -1,14 +1,9 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import List, Optional
+from typing import Optional
 
-from sqlmodel import Field, Relationship, SQLModel
-
-
-class TimestampMixin(SQLModel):
-    created_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
-    updated_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
+from sqlmodel import Field, SQLModel
 
 
 class CANotice(SQLModel, table=True):
@@ -26,9 +21,6 @@ class CANotice(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
     updated_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
 
-    ai_requests: List[AIRequest] = Relationship(back_populates="notice")  # type: ignore
-    drafts: List[DraftVersion] = Relationship(back_populates="notice")  # type: ignore
-
 
 class AIRequest(SQLModel, table=True):
     __tablename__ = "ai_request"
@@ -41,9 +33,6 @@ class AIRequest(SQLModel, table=True):
     created_by: str = Field(max_length=64)
     created_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
 
-    notice: CANotice = Relationship(back_populates="ai_requests")
-    outputs: List[AIOutput] = Relationship(back_populates="request")
-
 
 class AIOutput(SQLModel, table=True):
     __tablename__ = "ai_output"
@@ -55,9 +44,6 @@ class AIOutput(SQLModel, table=True):
     model_version: str = Field(max_length=32)
     risk_tokens: Optional[str] = Field(default=None, max_length=255)
     generated_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
-
-    request: AIRequest = Relationship(back_populates="outputs")
-    drafts: List[DraftVersion] = Relationship(back_populates="ai_output")
 
 
 class DraftVersion(SQLModel, table=True):
@@ -74,11 +60,6 @@ class DraftVersion(SQLModel, table=True):
     review_comment: Optional[str] = None
     updated_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
 
-    notice: CANotice = Relationship(back_populates="drafts")
-    ai_output: Optional[AIOutput] = Relationship(back_populates="drafts")
-    approvals: List[ApprovalHistory] = Relationship(back_populates="draft")  # type: ignore
-    distributions: List[DistributionLog] = Relationship(back_populates="draft")  # type: ignore
-
 
 class ApprovalHistory(SQLModel, table=True):
     __tablename__ = "approval_history"
@@ -89,8 +70,6 @@ class ApprovalHistory(SQLModel, table=True):
     decision: str = Field(max_length=16)
     decision_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
     approval_comment: Optional[str] = None
-
-    draft: DraftVersion = Relationship(back_populates="approvals")
 
 
 class DistributionLog(SQLModel, table=True):
@@ -103,8 +82,6 @@ class DistributionLog(SQLModel, table=True):
     distribution_status: str = Field(max_length=16, default="queued")
     sent_at: Optional[datetime] = None
     result_detail: Optional[str] = None
-
-    draft: DraftVersion = Relationship(back_populates="distributions")
 
 
 class AuditLog(SQLModel, table=True):

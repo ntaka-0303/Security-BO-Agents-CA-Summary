@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import asdict
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session
@@ -86,7 +87,7 @@ async def create_ai_request(payload: AIRequestCreate, session: Session = Depends
         entity_id=str(ai_output.ai_output_id),
         action="GENERATE",
         performed_by=payload.created_by,
-        payload=ai_result.model_dump(),
+        payload=asdict(ai_result),
     )
 
     return AIResponseEnvelope(
