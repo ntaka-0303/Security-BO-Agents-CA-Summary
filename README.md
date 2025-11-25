@@ -11,22 +11,42 @@ Security BO Agents プロジェクトにおける CA Summary エージェント�
   - `docs/`: ローカル開発手順などの補足ドキュメント
   - `prompts/`: エージェント用プロンプト類
 
-## ローカルセットアップ
+## セットアップ
+
+### Docker での実行（推奨）
+
+Docker を使用すると、依存関係のインストールなしで簡単に起動できます。
+
+```bash
+cd 03_Implementation
+cp .env.example .env  # 必要に応じて編集
+docker compose up --build -d
+```
+
+起動後、以下の URL でアクセスできます：
+- フロントエンド: http://localhost:3000
+- バックエンド API: http://localhost:8000
+
+詳細は [DOCKER_SETUP.md](./03_Implementation/docs/DOCKER_SETUP.md) を参照してください。
+
+### ローカル実行
+
 1. **バックエンド**
    ```bash
    cd 03_Implementation/backend
    cp env.template .env
-   poetry install
-   poetry run uvicorn app.main:app --reload
+   pip install -e .
+   uvicorn app.main:app --reload
    ```
 2. **フロントエンド**
    ```bash
    cd 03_Implementation/frontend
-   corepack enable
-   pnpm install
-   pnpm dev
+   npm install
+   npm run dev
    ```
 3. **補足**: DB 初期化やシードは `03_Implementation/backend/scripts/` を参照してください。
+
+詳細は [LOCAL_SETUP.md](./03_Implementation/docs/LOCAL_SETUP.md) を参照してください。
 
 ## 運用方針
 - ドキュメント→実装の順で更新し、Pull Request ベースでレビューします。

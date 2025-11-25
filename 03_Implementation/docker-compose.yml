@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  # バックエンド API サーバー
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ca-summary-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      # SQLite データベースの永続化
+      - backend-data:/app/data
+      # プロンプトファイルのホットリロード（開発時）
+      - ./prompts:/app/prompts:ro
+    environment:
+      - DATABASE_URL=sqlite:///./data/ca_summary.db
+      - API_PREFIX=/api
+      - APP_NAME=CA Summary Backend
+      # AI API 設定（必要に応じて .env ファイルで上書き）
+      - AI_BASE_URL=${AI_BASE_URL:-https://api.openai.com/v1/chat/completions}
+      - AI_MODEL=${AI_MODEL:-gpt-4o-mini}
+      - AI_API_KEY=${AI_API_KEY:-}
+      - RISK_THRESHOLD_HIGH=${RISK_THRESHOLD_HIGH:-70}
+      - RISK_THRESHOLD_MEDIUM=${RISK_THRESHOLD_MEDIUM:-50}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - ca-network
+
+  # フロントエンド Next.js アプリ
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_BASE=http://localhost:8000/api
+    container_name: ca-summary-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+    networks:
+      - ca-network
+
+volumes:
+  backend-data:
+    driver: local
+
+networks:
+  ca-network:
+    driver: bridge
