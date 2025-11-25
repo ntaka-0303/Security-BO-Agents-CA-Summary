@@ -138,14 +138,14 @@ export default function DraftsPage() {
                     }}
                   >
                     <Space direction="vertical" size={4} style={{ width: "100%" }}>
-                      <Space align="center" justify="space-between">
+                      <Flex align="center" justify="space-between">
                         <Typography.Text strong>
                           {draft.ca_notice_id} / v{draft.version_no}
                         </Typography.Text>
                         <Tag color={draft.risk_flag === "Y" ? "red" : "blue"}>
                           {draft.risk_flag === "Y" ? "高リスク" : "通常"}
                         </Tag>
-                      </Space>
+                      </Flex>
                       <Typography.Text type="secondary" style={{ fontSize: 12 }}>
                         ステータス: {draft.approval_status} / 更新者: {draft.editor_id}
                       </Typography.Text>
@@ -174,7 +174,7 @@ export default function DraftsPage() {
                       style={{ padding: "12px 0", borderBottom: "1px solid #f0f0f0" }}
                       size={2}
                     >
-                      <Space align="center" justify="space-between">
+                      <Flex align="center" justify="space-between">
                         <Typography.Text strong>
                           v{draft.version_no} / {draft.approval_status}
                         </Typography.Text>
@@ -182,7 +182,7 @@ export default function DraftsPage() {
                           status={draft.risk_flag === "Y" ? "error" : "processing"}
                           text={draft.risk_flag === "Y" ? "高リスク" : "通常"}
                         />
-                      </Space>
+                      </Flex>
                       <Typography.Text type="secondary" style={{ fontSize: 12 }}>
                         更新: {new Date(draft.updated_at).toLocaleString()} / {draft.editor_id}
                       </Typography.Text>
