@@ -1,4 +1,5 @@
 # Environment files
+03_Implementation/.env
 03_Implementation/backend/.env*
 03_Implementation/backend/.venv/
 
