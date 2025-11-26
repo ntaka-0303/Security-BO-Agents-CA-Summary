@@ -31,7 +31,7 @@ cd "${REPO}/03_Implementation/backend"
 python -m venv .venv
 source .venv/bin/activate
 pip install -e .
-cp env.example .env  # 必要に応じて編集
+cp ../.env.example .env  # 必要に応じて編集
 python scripts/init_db.py
 uvicorn app.main:app --reload --port 8000
 ```
