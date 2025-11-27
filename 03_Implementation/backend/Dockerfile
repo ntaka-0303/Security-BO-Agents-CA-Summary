@@ -18,10 +18,10 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # アプリケーションコードをコピー
 COPY app ./app
 COPY scripts ./scripts
-COPY prompts ./prompts
 
-# データディレクトリを作成
-RUN mkdir -p /app/data
+# データディレクトリとプロンプトディレクトリを作成
+# prompts は docker-compose.yml でボリュームマウントされる
+RUN mkdir -p /app/data /app/prompts
 
 # 環境変数のデフォルト設定
 ENV DATABASE_URL="sqlite:///./data/ca_summary.db"

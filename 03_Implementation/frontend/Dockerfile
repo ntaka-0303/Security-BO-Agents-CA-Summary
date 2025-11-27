@@ -20,6 +20,9 @@ COPY . .
 ARG NEXT_PUBLIC_API_BASE=http://localhost:8000/api
 ENV NEXT_PUBLIC_API_BASE=${NEXT_PUBLIC_API_BASE}
 
+# public ディレクトリを作成（存在しない場合のため）
+RUN mkdir -p public
+
 # Next.js をビルド
 RUN npm run build
 
