@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class DraftSaveRequest(BaseModel):
@@ -21,6 +21,8 @@ class DraftSubmitRequest(BaseModel):
 
 
 class DraftRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     draft_id: int
     ca_notice_id: str
     version_no: int

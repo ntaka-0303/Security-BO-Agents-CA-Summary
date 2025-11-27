@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import List, Optional, Sequence
 
 from sqlmodel import Session, select
 
@@ -56,10 +56,14 @@ def list_drafts(session: Session, notice_id: str) -> List[DraftVersion]:
     return list(session.exec(statement))
 
 
-def list_pending_drafts(session: Session) -> List[DraftVersion]:
+def list_pending_drafts(session: Session, *, statuses: Optional[Sequence[str]] = None) -> List[DraftVersion]:
+    filters = [status for status in (statuses or ["pending"]) if status]
+    if not filters:
+        return []
+
     statement = (
         select(DraftVersion)
-        .where(DraftVersion.approval_status == "pending")
+        .where(DraftVersion.approval_status.in_(filters))
         .order_by(DraftVersion.updated_at.desc())
     )
     return list(session.exec(statement))

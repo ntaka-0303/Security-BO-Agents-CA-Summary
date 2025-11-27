@@ -44,7 +44,7 @@ def decide_approval(draft_id: int, payload: ApprovalRequest, session: Session = 
         payload=payload.model_dump(),
     )
 
-    return DraftRead(**draft.model_dump())
+    return DraftRead.model_validate(draft)
 
 
 @router.get("/{draft_id}", response_model=ApprovalListResponse)

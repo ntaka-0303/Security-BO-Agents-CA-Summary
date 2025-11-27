@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session
 
 from app import dependencies
@@ -14,8 +14,15 @@ router = APIRouter(prefix=f"{settings.api_prefix}/drafts", tags=["drafts"])
 
 
 @router.get("/pending", response_model=DraftListResponse)
-def list_pending_drafts(session: Session = Depends(dependencies.get_db)) -> DraftListResponse:
-    drafts = [DraftRead(**draft.model_dump()) for draft in drafts_crud.list_pending_drafts(session)]
+def list_pending_drafts(
+    include_drafts: bool = Query(default=False, alias="includeDrafts"),
+    session: Session = Depends(dependencies.get_db),
+) -> DraftListResponse:
+    statuses = ["pending"]
+    if include_drafts:
+        statuses.insert(0, "draft")
+
+    drafts = [DraftRead.model_validate(draft) for draft in drafts_crud.list_pending_drafts(session, statuses=statuses)]
     return DraftListResponse(items=drafts)
 
 
@@ -24,7 +31,7 @@ def list_drafts(notice_id: str, session: Session = Depends(dependencies.get_db))
     notice = session.get(CANotice, notice_id)
     if not notice:
         raise HTTPException(status_code=404, detail="Notice not found")
-    drafts = [DraftRead(**draft.model_dump()) for draft in drafts_crud.list_drafts(session, notice_id)]
+    drafts = [DraftRead.model_validate(draft) for draft in drafts_crud.list_drafts(session, notice_id)]
     return DraftListResponse(items=drafts)
 
 
@@ -58,7 +65,7 @@ def save_draft(notice_id: str, payload: DraftSaveRequest, session: Session = Dep
         payload=payload.model_dump(),
     )
 
-    return DraftRead(**draft.model_dump())
+    return DraftRead.model_validate(draft)
 
 
 @router.post("/{draft_id}/submit", response_model=DraftRead)
@@ -86,4 +93,4 @@ def submit_draft(draft_id: int, payload: DraftSubmitRequest, session: Session = 
         payload=payload.model_dump(),
     )
 
-    return DraftRead(**draft.model_dump())
+    return DraftRead.model_validate(draft)

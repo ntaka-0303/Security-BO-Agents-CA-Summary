@@ -60,8 +60,9 @@ export const api = {
     const data = await request<DraftListResponse>(`/drafts/${noticeId}`);
     return data.items;
   },
-  async listPendingDrafts(): Promise<Draft[]> {
-    const data = await request<DraftListResponse>("/drafts/pending");
+  async listPendingDrafts(options?: { includeDrafts?: boolean }): Promise<Draft[]> {
+    const query = options?.includeDrafts ? "?includeDrafts=true" : "";
+    const data = await request<DraftListResponse>(`/drafts/pending${query}`);
     return data.items;
   },
   async saveDraft(

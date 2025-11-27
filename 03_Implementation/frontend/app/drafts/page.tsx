@@ -32,7 +32,11 @@ const EDITOR_ID = "drafter.user";
 const SUBMITTER_ID = "drafter.user";
 
 export default function DraftsPage() {
-  const { data: pendingDrafts, isLoading, mutate } = useSWR("pendingDrafts", api.listPendingDrafts, {
+  const {
+    data: reviewDrafts,
+    isLoading,
+    mutate: mutateReviewDrafts,
+  } = useSWR("reviewDrafts", () => api.listPendingDrafts({ includeDrafts: true }), {
     dedupingInterval: 5_000,
   });
   const [selectedDraft, setSelectedDraft] = useState<Draft | null>(null);
@@ -77,7 +81,7 @@ export default function DraftsPage() {
         review_comment: values.review_comment,
       });
       message.success(`ドラフト v${response.version_no} を保存しました`);
-      mutate();
+      mutateReviewDrafts();
       mutateHistory();
       setSelectedDraft(response);
     } catch (error) {
@@ -102,7 +106,7 @@ export default function DraftsPage() {
         comment: values.review_comment,
       });
       message.success("承認依頼を送信しました");
-      mutate();
+      mutateReviewDrafts();
       mutateHistory();
       setSelectedDraft(response);
     } catch (error) {
@@ -124,7 +128,7 @@ export default function DraftsPage() {
         <Col span={10}>
           <Card title="要対応ドラフト" loading={isLoading} bodyStyle={{ padding: 0 }}>
             <div style={{ maxHeight: 560, overflow: "auto" }}>
-              {(pendingDrafts ?? []).map((draft) => {
+              {(reviewDrafts ?? []).map((draft) => {
                 const active = draft.draft_id === selectedDraft?.draft_id;
                 return (
                   <div
@@ -156,7 +160,7 @@ export default function DraftsPage() {
                   </div>
                 );
               })}
-              {(pendingDrafts ?? []).length === 0 && (
+              {(reviewDrafts ?? []).length === 0 && (
                 <Flex align="center" justify="center" style={{ padding: 32 }}>
                   <Typography.Text type="secondary">Pending ドラフトはありません</Typography.Text>
                 </Flex>
