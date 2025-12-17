@@ -71,3 +71,13 @@ export type DistributionListResponse = {
   items: DistributionRecord[];
 };
 
+export type WorkflowStats = {
+  intake_count: number;
+  draft_count: number;
+  review_waiting_count: number;
+  approval_waiting_count: number;
+  approved_count: number;
+  rejected_count: number;
+  high_risk_count: number;
+};
+

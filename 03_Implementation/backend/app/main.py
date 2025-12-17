@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.db.session import init_db
-from app.routers import ai, approvals, distribution, drafts, logs, notices, stubs
+from app.routers import ai, approvals, dashboard, distribution, drafts, logs, notices, stubs
 
 app = FastAPI(title=settings.app_name, openapi_url=f"{settings.api_prefix}/openapi.json")
 
@@ -33,6 +33,7 @@ app.include_router(notices.router)
 app.include_router(ai.router)
 app.include_router(drafts.router)
 app.include_router(approvals.router)
+app.include_router(dashboard.router)
 app.include_router(distribution.router)
 app.include_router(logs.router)
 app.include_router(stubs.router)

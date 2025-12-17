@@ -7,6 +7,7 @@ import type {
   DistributionRecord,
   Notice,
   NoticeListResponse,
+  WorkflowStats,
 } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000/api";
@@ -112,6 +113,9 @@ export const api = {
   },
   async listDistributions(draftId: number): Promise<DistributionListResponse> {
     return request<DistributionListResponse>(`/distribution/${draftId}`);
+  },
+  async getWorkflowStats(): Promise<WorkflowStats> {
+    return request<WorkflowStats>("/dashboard/workflow-stats");
   },
 };
 

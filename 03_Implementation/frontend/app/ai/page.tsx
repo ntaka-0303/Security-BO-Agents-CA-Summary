@@ -19,10 +19,26 @@ import {
   Tag,
   Timeline,
   Typography,
+  Empty,
+  Spin,
+  Alert,
 } from "antd";
+import {
+  RobotOutlined,
+  ThunderboltOutlined,
+  FileTextOutlined,
+  HistoryOutlined,
+  WarningOutlined,
+  CheckCircleOutlined,
+  SendOutlined,
+  ReloadOutlined,
+  UserOutlined,
+  BankOutlined,
+  TagOutlined,
+} from "@ant-design/icons";
 
 import { api } from "@/lib/apiClient";
-import type { AIResponse, Draft, Notice } from "@/lib/types";
+import type { AIResponse, Notice } from "@/lib/types";
 
 type AiFormValues = {
   template_type: string;
@@ -31,15 +47,15 @@ type AiFormValues = {
 };
 
 const templateOptions = [
-  { value: "standard", label: "標準" },
-  { value: "urgent", label: "至急" },
-  { value: "premium", label: "プレミアム" },
+  { value: "standard", label: "標準", icon: <FileTextOutlined />, color: "#63dcfa" },
+  { value: "urgent", label: "至急", icon: <ThunderboltOutlined />, color: "#f59e0b" },
+  { value: "premium", label: "プレミアム", icon: <CheckCircleOutlined />, color: "#a855f7" },
 ];
 
 const segmentOptions = [
-  { value: "retail", label: "リテール" },
-  { value: "HNWI", label: "富裕層(HNWI)" },
-  { value: "institutional", label: "機関投資家" },
+  { value: "retail", label: "リテール", icon: <UserOutlined />, desc: "個人投資家向け" },
+  { value: "HNWI", label: "富裕層(HNWI)", icon: <BankOutlined />, desc: "高純資産層向け" },
+  { value: "institutional", label: "機関投資家", icon: <BankOutlined />, desc: "法人・機関向け" },
 ];
 
 const CREATED_BY = "demo.operator";
@@ -53,7 +69,7 @@ export default function AiWorkbenchPage() {
   const [aiResult, setAiResult] = useState<AIResponse | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const { data: drafts, mutate: mutateDrafts } = useSWR(
+  const { data: drafts } = useSWR(
     selectedNotice ? ["drafts", selectedNotice.ca_notice_id] : null,
     () => api.listDrafts(selectedNotice!.ca_notice_id),
   );
@@ -72,7 +88,7 @@ export default function AiWorkbenchPage() {
 
   const handleGenerate = async () => {
     if (!selectedNotice) {
-      message.warning("左ペインから CA 通知を選択してください");
+      message.warning("左ペインからCA通知を選択してください");
       return;
     }
     try {
@@ -86,13 +102,12 @@ export default function AiWorkbenchPage() {
         created_by: CREATED_BY,
       });
       setAiResult(result);
-      message.success("AI 生成が完了しました");
-      mutateDrafts();
+      message.success("AI生成が完了しました");
     } catch (error) {
       if ((error as Error).message) {
         message.error((error as Error).message);
       } else {
-        message.error("AI リクエストに失敗しました");
+        message.error("AIリクエストに失敗しました");
       }
     } finally {
       setLoading(false);
@@ -100,68 +115,152 @@ export default function AiWorkbenchPage() {
   };
 
   return (
-    <Flex vertical gap={16}>
-      <div>
-        <Typography.Title level={3} style={{ marginBottom: 0 }}>
-          AI 入力オーケストレーション
-        </Typography.Title>
-        <Typography.Text type="secondary">
-          F-003/F-004: 原文とテンプレ条件をセットし、AI 要約・ドラフトを生成
-        </Typography.Text>
-      </div>
+    <Flex vertical gap={24}>
+      {/* Header */}
+      <Flex justify="space-between" align="flex-start" wrap="wrap" gap={16}>
+        <Space direction="vertical" size={4}>
+          <Typography.Title level={3} style={{ marginBottom: 0, fontWeight: 700 }}>
+            AI生成ワークベンチ
+          </Typography.Title>
+          <Typography.Text type="secondary">
+            CA通知から要約・顧客向けドラフトを自動生成
+          </Typography.Text>
+        </Space>
+        {selectedNotice && (
+          <Tag
+            style={{
+              padding: "8px 16px",
+              fontSize: 14,
+              background: "var(--color-accent-muted)",
+              borderColor: "var(--color-accent)",
+              color: "var(--color-accent)",
+            }}
+          >
+            <BankOutlined style={{ marginRight: 8 }} />
+            {selectedNotice.security_name}
+          </Tag>
+        )}
+      </Flex>
 
-      <Row gutter={16}>
-        <Col span={10}>
-          <Card loading={noticesLoading} title="CA 通知一覧" bodyStyle={{ padding: 0 }}>
-            <div style={{ maxHeight: 540, overflow: "auto" }}>
-              {(sortedNotices.length > 0 ? sortedNotices : []).map((notice) => {
-                const active = selectedNotice?.ca_notice_id === notice.ca_notice_id;
-                return (
-                  <div
-                    key={notice.ca_notice_id}
-                    onClick={() => handleSelectNotice(notice)}
-                    style={{
-                      padding: "16px 20px",
-                      borderBottom: "1px solid #f0f0f0",
-                      cursor: "pointer",
-                      background: active ? "#e6f4ff" : "transparent",
-                    }}
-                  >
-                    <Space direction="vertical" size={4} style={{ width: "100%" }}>
-                      <Flex align="center" justify="space-between">
-                        <Typography.Text strong>{notice.security_name}</Typography.Text>
-                        <Badge status="processing" text={notice.notice_status} />
-                      </Flex>
-                      <Typography.Text type="secondary">{notice.ca_event_type}</Typography.Text>
-                      <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                        CA通知ID: {notice.ca_notice_id}
-                      </Typography.Text>
-                    </Space>
-                  </div>
-                );
-              })}
-              {sortedNotices.length === 0 && (
-                <Flex align="center" justify="center" style={{ padding: 40 }}>
-                  <Typography.Text type="secondary">
-                    CA 通知が登録されていません
-                  </Typography.Text>
-                </Flex>
+      <Row gutter={20}>
+        {/* Left Panel - Notice List */}
+        <Col xs={24} lg={10}>
+          <Card
+            title={
+              <Flex align="center" gap={8}>
+                <FileTextOutlined style={{ color: "#63dcfa" }} />
+                <span>CA通知一覧</span>
+                <Tag style={{ marginLeft: 8 }}>{sortedNotices.length}件</Tag>
+              </Flex>
+            }
+            loading={noticesLoading}
+            styles={{ body: { padding: 0 } }}
+          >
+            <div style={{ maxHeight: 440, overflow: "auto" }}>
+              {sortedNotices.length > 0 ? (
+                sortedNotices.map((notice) => {
+                  const active = selectedNotice?.ca_notice_id === notice.ca_notice_id;
+                  return (
+                    <div
+                      key={notice.ca_notice_id}
+                      onClick={() => handleSelectNotice(notice)}
+                      style={{
+                        padding: "16px 20px",
+                        cursor: "pointer",
+                        background: active ? "var(--color-accent-muted)" : "transparent",
+                        borderLeft: active ? "3px solid var(--color-accent)" : "3px solid transparent",
+                        borderBottom: "1px solid var(--color-border-subtle)",
+                        transition: "all 0.2s ease",
+                      }}
+                    >
+                      <Space direction="vertical" size={8} style={{ width: "100%" }}>
+                        <Flex align="center" justify="space-between">
+                          <Typography.Text strong>{notice.security_name}</Typography.Text>
+                          <Badge
+                            status={notice.notice_status === "ai-generated" ? "success" : "processing"}
+                            text={
+                              <Typography.Text type="secondary" style={{ fontSize: 11 }}>
+                                {notice.notice_status}
+                              </Typography.Text>
+                            }
+                          />
+                        </Flex>
+                        <Flex align="center" gap={8}>
+                          <Tag
+                            style={{
+                              background: "rgba(99, 220, 250, 0.1)",
+                              borderColor: "rgba(99, 220, 250, 0.3)",
+                              color: "#63dcfa",
+                              fontSize: 11,
+                            }}
+                          >
+                            <TagOutlined style={{ marginRight: 4 }} />
+                            {notice.ca_event_type}
+                          </Tag>
+                          <Typography.Text type="secondary" style={{ fontSize: 11 }}>
+                            {notice.security_code}
+                          </Typography.Text>
+                        </Flex>
+                        <Typography.Text
+                          type="secondary"
+                          style={{ fontSize: 11, fontFamily: "var(--font-mono)" }}
+                        >
+                          {notice.ca_notice_id}
+                        </Typography.Text>
+                      </Space>
+                    </div>
+                  );
+                })
+              ) : (
+                <Empty
+                  description="CA通知が登録されていません"
+                  style={{ padding: 48 }}
+                />
               )}
             </div>
           </Card>
-          <Card title="生成履歴" style={{ marginTop: 16 }}>
+
+          {/* Generation History */}
+          <Card
+            title={
+              <Flex align="center" gap={8}>
+                <HistoryOutlined style={{ color: "#a855f7" }} />
+                <span>生成履歴</span>
+              </Flex>
+            }
+            style={{ marginTop: 20 }}
+            styles={{ body: { maxHeight: 200, overflow: "auto" } }}
+          >
             {selectedNotice ? (
               drafts && drafts.length > 0 ? (
                 <Timeline
                   items={drafts.slice(0, 5).map((draft) => ({
-                    color: draft.risk_flag === "Y" ? "red" : "blue",
+                    color: draft.risk_flag === "Y" ? "#ef4444" : "#10b981",
                     children: (
                       <Space direction="vertical" size={0}>
-                        <Typography.Text strong>
-                          v{draft.version_no} / {draft.approval_status}
-                        </Typography.Text>
-                        <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                          更新者: {draft.editor_id} / {new Date(draft.updated_at).toLocaleString()}
+                        <Flex align="center" gap={8}>
+                          <Typography.Text strong style={{ fontSize: 13 }}>
+                            v{draft.version_no}
+                          </Typography.Text>
+                          <Tag
+                            style={{
+                              fontSize: 10,
+                              background: draft.approval_status === "approved"
+                                ? "#10b98120"
+                                : "var(--color-bg-tertiary)",
+                              borderColor: draft.approval_status === "approved"
+                                ? "#10b981"
+                                : "var(--color-border)",
+                              color: draft.approval_status === "approved"
+                                ? "#10b981"
+                                : "var(--color-text-secondary)",
+                            }}
+                          >
+                            {draft.approval_status}
+                          </Tag>
+                        </Flex>
+                        <Typography.Text type="secondary" style={{ fontSize: 11 }}>
+                          {draft.editor_id} · {new Date(draft.updated_at).toLocaleString("ja-JP")}
                         </Typography.Text>
                       </Space>
                     ),
@@ -171,76 +270,232 @@ export default function AiWorkbenchPage() {
                 <Typography.Text type="secondary">履歴がありません</Typography.Text>
               )
             ) : (
-              <Typography.Text type="secondary">
-                通知を選択すると履歴が表示されます
-              </Typography.Text>
+              <Typography.Text type="secondary">通知を選択すると履歴が表示されます</Typography.Text>
             )}
           </Card>
         </Col>
 
-        <Col span={14}>
-          <Card title="AI 条件入力" extra={selectedNotice ? selectedNotice.security_name : "通知未選択"}>
+        {/* Right Panel - AI Generation */}
+        <Col xs={24} lg={14}>
+          <Card
+            title={
+              <Flex align="center" gap={8}>
+                <RobotOutlined style={{ color: "#a855f7" }} />
+                <span>AI条件設定</span>
+              </Flex>
+            }
+            extra={
+              selectedNotice && (
+                <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                  {selectedNotice.ca_notice_id}
+                </Typography.Text>
+              )
+            }
+          >
             {selectedNotice ? (
-              <Form
-                form={form}
-                layout="vertical"
-                initialValues={{
-                  template_type: "standard",
-                  customer_segment: "retail",
-                }}
-              >
-                <Form.Item name="template_type" label="テンプレート種別" rules={[{ required: true }]}>
-                  <Select options={templateOptions} />
-                </Form.Item>
-                <Form.Item name="customer_segment" label="顧客セグメント" rules={[{ required: true }]}>
-                  <Radio.Group options={segmentOptions} optionType="button" />
-                </Form.Item>
-                <Form.Item name="instructions" label="追加指示">
-                  <Input.TextArea rows={4} placeholder="例: 重要な日付を1行目に明記" maxLength={2000} />
-                </Form.Item>
-                <Space>
-                  <Button type="primary" onClick={handleGenerate} loading={loading}>
-                    AI 生成を実行
-                  </Button>
-                  <Button onClick={() => form.resetFields()} disabled={loading}>
-                    条件リセット
-                  </Button>
-                </Space>
-              </Form>
+              <Spin spinning={loading} tip="AI生成中...">
+                <Form
+                  form={form}
+                  layout="vertical"
+                  initialValues={{
+                    template_type: "standard",
+                    customer_segment: "retail",
+                  }}
+                >
+                  <Form.Item
+                    name="template_type"
+                    label={
+                      <Flex align="center" gap={6}>
+                        <FileTextOutlined />
+                        テンプレート種別
+                      </Flex>
+                    }
+                    rules={[{ required: true }]}
+                  >
+                    <Select
+                      size="large"
+                      options={templateOptions.map((opt) => ({
+                        value: opt.value,
+                        label: (
+                          <Flex align="center" gap={8}>
+                            <span style={{ color: opt.color }}>{opt.icon}</span>
+                            {opt.label}
+                          </Flex>
+                        ),
+                      }))}
+                    />
+                  </Form.Item>
+
+                  <Form.Item
+                    name="customer_segment"
+                    label={
+                      <Flex align="center" gap={6}>
+                        <UserOutlined />
+                        顧客セグメント
+                      </Flex>
+                    }
+                    rules={[{ required: true }]}
+                  >
+                    <Radio.Group size="large" style={{ width: "100%" }}>
+                      <Flex gap={12} wrap="wrap">
+                        {segmentOptions.map((opt) => (
+                          <Radio.Button
+                            key={opt.value}
+                            value={opt.value}
+                            style={{ flex: 1, minWidth: 120, textAlign: "center", height: 48 }}
+                          >
+                            <Flex vertical align="center" justify="center" style={{ height: "100%" }}>
+                              <span>{opt.label}</span>
+                            </Flex>
+                          </Radio.Button>
+                        ))}
+                      </Flex>
+                    </Radio.Group>
+                  </Form.Item>
+
+                  <Form.Item
+                    name="instructions"
+                    label={
+                      <Flex align="center" gap={6}>
+                        <ThunderboltOutlined />
+                        追加指示（オプション）
+                      </Flex>
+                    }
+                  >
+                    <Input.TextArea
+                      rows={3}
+                      placeholder="例: 重要な日付を1行目に明記してください"
+                      maxLength={2000}
+                    />
+                  </Form.Item>
+
+                  <Flex gap={12}>
+                    <Button
+                      type="primary"
+                      icon={<SendOutlined />}
+                      size="large"
+                      onClick={handleGenerate}
+                      loading={loading}
+                    >
+                      AI生成を実行
+                    </Button>
+                    <Button
+                      icon={<ReloadOutlined />}
+                      size="large"
+                      onClick={() => form.resetFields()}
+                      disabled={loading}
+                    >
+                      条件リセット
+                    </Button>
+                  </Flex>
+                </Form>
+              </Spin>
             ) : (
-              <Typography.Text type="secondary">
-                左の通知一覧から対象を選択してください。
-              </Typography.Text>
+              <Empty
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                description={
+                  <Space direction="vertical" size={4}>
+                    <Typography.Text type="secondary">
+                      左のリストからCA通知を選択してください
+                    </Typography.Text>
+                    <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                      選択後、AI生成条件を設定できます
+                    </Typography.Text>
+                  </Space>
+                }
+                style={{ padding: 60 }}
+              />
             )}
           </Card>
 
+          {/* AI Result */}
           {aiResult && (
-            <Card title="最新 AI 生成結果" style={{ marginTop: 16 }}>
-              <Space direction="vertical" size={16} style={{ width: "100%" }}>
-                <Typography.Text type="secondary">
+            <Card
+              title={
+                <Flex align="center" gap={8}>
+                  <CheckCircleOutlined style={{ color: "#10b981" }} />
+                  <span>AI生成結果</span>
+                </Flex>
+              }
+              style={{ marginTop: 20 }}
+              extra={
+                <Typography.Text type="secondary" style={{ fontSize: 12 }}>
                   モデル: {aiResult.model_version} / Draft v{aiResult.draft_version}
                 </Typography.Text>
-                <Flex gap={12} wrap="wrap">
-                  {(aiResult.risk_tokens?.split(",") ?? [])
-                    .filter((token) => token)
-                    .map((token) => (
-                      <Tag color="error" key={token}>
-                        {token}
-                      </Tag>
-                    ))}
-                  {(!aiResult.risk_tokens || aiResult.risk_tokens.length === 0) && (
-                    <Tag color="processing">リスク検出なし</Tag>
-                  )}
-                  <Tag color={aiResult.risk_flag === "Y" ? "red" : "green"}>
-                    リスク判定: {aiResult.risk_flag === "Y" ? "高" : "低"}
-                  </Tag>
-                </Flex>
-                <Divider />
-                <Typography.Title level={5}>社内要約</Typography.Title>
-                <Typography.Paragraph>{aiResult.internal_summary}</Typography.Paragraph>
-                <Divider />
-                <Typography.Title level={5}>顧客向けドラフト</Typography.Title>
-                <Typography.Paragraph>{aiResult.customer_draft}</Typography.Paragraph>
+              }
+            >
+              <Space direction="vertical" size={20} style={{ width: "100%" }}>
+                {/* Risk Assessment */}
+                <Alert
+                  type={aiResult.risk_flag === "Y" ? "error" : "success"}
+                  icon={aiResult.risk_flag === "Y" ? <WarningOutlined /> : <CheckCircleOutlined />}
+                  message={
+                    <Flex align="center" justify="space-between">
+                      <span>リスク判定: {aiResult.risk_flag === "Y" ? "高リスク" : "低リスク"}</span>
+                      <Flex gap={8}>
+                        {(aiResult.risk_tokens?.split(",") ?? [])
+                          .filter((token) => token.trim())
+                          .map((token) => (
+                            <Tag key={token} color="error">
+                              {token.trim()}
+                            </Tag>
+                          ))}
+                        {(!aiResult.risk_tokens || !aiResult.risk_tokens.trim()) && (
+                          <Tag color="success">リスク検出なし</Tag>
+                        )}
+                      </Flex>
+                    </Flex>
+                  }
+                  showIcon
+                  style={{
+                    background: aiResult.risk_flag === "Y" ? "#ef444410" : "#10b98110",
+                    border: `1px solid ${aiResult.risk_flag === "Y" ? "#ef444440" : "#10b98140"}`,
+                  }}
+                />
+
+                <Divider style={{ margin: "8px 0" }} />
+
+                {/* Internal Summary */}
+                <div>
+                  <Typography.Title level={5} style={{ marginBottom: 12 }}>
+                    <FileTextOutlined style={{ marginRight: 8, color: "#63dcfa" }} />
+                    社内要約
+                  </Typography.Title>
+                  <Card
+                    size="small"
+                    style={{
+                      background: "var(--color-bg-tertiary)",
+                      borderColor: "var(--color-border)",
+                    }}
+                  >
+                    <Typography.Paragraph style={{ marginBottom: 0, lineHeight: 1.8 }}>
+                      {aiResult.internal_summary}
+                    </Typography.Paragraph>
+                  </Card>
+                </div>
+
+                <Divider style={{ margin: "8px 0" }} />
+
+                {/* Customer Draft */}
+                <div>
+                  <Typography.Title level={5} style={{ marginBottom: 12 }}>
+                    <UserOutlined style={{ marginRight: 8, color: "#a855f7" }} />
+                    顧客向けドラフト
+                  </Typography.Title>
+                  <Card
+                    size="small"
+                    style={{
+                      background: "var(--color-bg-tertiary)",
+                      borderColor: "var(--color-border)",
+                    }}
+                  >
+                    <Typography.Paragraph
+                      style={{ marginBottom: 0, lineHeight: 1.8, whiteSpace: "pre-wrap" }}
+                    >
+                      {aiResult.customer_draft}
+                    </Typography.Paragraph>
+                  </Card>
+                </div>
               </Space>
             </Card>
           )}
@@ -249,4 +504,3 @@ export default function AiWorkbenchPage() {
     </Flex>
   );
 }
-

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AntdProvider } from "./providers";
+import { MainLayout } from "./components/MainLayout";
 import "antd/dist/reset.css";
 import "./globals.css";
 
@@ -16,10 +17,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ja">
       <body>
         <AntdProvider>
-          <div className="app-shell">{children}</div>
+          <MainLayout>{children}</MainLayout>
         </AntdProvider>
       </body>
     </html>
   );
 }
-
